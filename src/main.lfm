@@ -3,35 +3,49 @@ object Form1: TForm1
   Height = 690
   Top = 40
   Width = 1139
-  Caption = 'Form1'
+  Caption = 'REST Client'
   ClientHeight = 690
   ClientWidth = 1139
   LCLVersion = '4.6.0.0'
-  object LabelURL: TLabel
-    Left = 8
-    Height = 15
-    Top = 12
-    Width = 24
-    Caption = 'URL:'
-  end
-  object EditUrl: TEdit
-    Left = 48
-    Height = 23
-    Top = 8
-    Width = 368
-    TabOrder = 0
-  end
+  OnCreate = FormCreate
   object ButtonStart: TButton
-    Left = 424
+    Left = 8
     Height = 25
     Top = 8
     Width = 75
     Caption = 'GO!'
+    TabOrder = 0
+    OnClick = ButtonStartClick
+  end
+  object ButtonPaste: TButton
+    Left = 92
+    Height = 25
+    Top = 8
+    Width = 75
+    Caption = 'Paste'
     TabOrder = 1
+    OnClick = ButtonPasteClick
+  end
+  object ButtonCopy: TButton
+    Left = 176
+    Height = 25
+    Top = 8
+    Width = 75
+    Caption = 'Copy Result'
+    TabOrder = 3
+    OnClick = ButtonCopyClick
+  end
+  object StatusBar1: TStatusBar
+    Left = 0
+    Height = 22
+    Top = 668
+    Width = 1139
+    Panels = <>
+    SimpleText = 'Ready'
   end
   object PanelContent: TPanel
     Left = 8
-    Height = 640
+    Height = 622
     Top = 40
     Width = 1128
     Anchors = [akTop, akLeft, akRight, akBottom]
