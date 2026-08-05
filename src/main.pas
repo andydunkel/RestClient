@@ -52,6 +52,10 @@ type
     ToolButtonSep2: TToolButton;
     ToolButtonSend: TToolButton;
     ToolButtonCopyResult: TToolButton;
+    ToolButtonSep3: TToolButton;
+    ToolButtonRename: TToolButton;
+    ToolButtonDuplicate: TToolButton;
+    ToolButtonDelete: TToolButton;
     PanelLeft: TPanel;
     TreeView1: TTreeView;
     PopupMenuTree: TPopupMenu;
