@@ -7,9 +7,11 @@ object Form1: TForm1
   ClientHeight = 750
   ClientWidth = 1200
   Menu = MainMenu1
+  Position = poScreenCenter
   LCLVersion = '4.8.0.0'
   OnCreate = FormCreate
   OnDestroy = FormDestroy
+  OnShow = FormShow
   object ToolBar1: TToolBar
     Left = 0
     Top = 0
@@ -306,6 +308,10 @@ object Form1: TForm1
       end
       object MenuItemNewFile: TMenuItem
         Action = actNewFile
+      end
+      object MenuItemRecent: TMenuItem
+        Caption = 'Recent Folders'
+        Enabled = False
       end
       object MenuItemSep1: TMenuItem
         Caption = '-'

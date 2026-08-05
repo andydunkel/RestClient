@@ -7,7 +7,8 @@ interface
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ComCtrls, ExtCtrls,
   Menus, ActnList, StdCtrls, Clipbrd,
-  SynEdit, fphttpclient, opensslsockets, fpjson, jsonparser;
+  SynEdit, fphttpclient, opensslsockets, fpjson, jsonparser,
+  settings;
 
 type
 
@@ -26,6 +27,7 @@ type
     MenuFile: TMenuItem;
     MenuItemOpenFolder: TMenuItem;
     MenuItemNewFile: TMenuItem;
+    MenuItemRecent: TMenuItem;
     MenuItemSep1: TMenuItem;
     MenuItemExit: TMenuItem;
     MenuView: TMenuItem;
@@ -56,6 +58,7 @@ type
     StatusBar1: TStatusBar;
     procedure actExitExecute(Sender: TObject);
     procedure FormCreate(Sender: TObject);
+    procedure FormShow(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure actOpenFolderExecute(Sender: TObject);
     procedure actRefreshExecute(Sender: TObject);
@@ -67,10 +70,14 @@ type
   private
     FProjectDir: string;
     FCurrentFile: string;
+    FSettings: TAppSettings;
     procedure LoadTree;
     procedure FillNode(ParentNode: TTreeNode; const Dir: string);
     procedure SaveCurrentFile;
     procedure OpenFile(const APath: string);
+    procedure LoadProjectDir(const ADir: string);
+    procedure RebuildRecentMenu;
+    procedure RecentFolderClick(Sender: TObject);
     function  BeautifyJSON(const S: string): string;
     procedure ParseAndSend;
   public
@@ -88,10 +95,22 @@ implementation
 
 procedure TForm1.FormCreate(Sender: TObject);
 begin
-  Caption := 'REST Client';
   SynEditResult.ReadOnly := True;
   FProjectDir  := '';
   FCurrentFile := '';
+  FSettings := TAppSettings.Create;
+  FSettings.Load;
+end;
+
+procedure TForm1.FormShow(Sender: TObject);
+begin
+  RebuildRecentMenu;
+  // Reopen last folder if it still exists
+  if (FSettings.RecentFolders.Count > 0)
+    and DirectoryExists(FSettings.RecentFolders[0]) then
+    LoadProjectDir(FSettings.RecentFolders[0]);
+  if FProjectDir = '' then
+    Caption := APP_NAME;
 end;
 
 procedure TForm1.actExitExecute(Sender: TObject);
@@ -120,6 +139,8 @@ begin
   for i := 0 to TreeView1.Items.Count - 1 do
     if TreeView1.Items[i].Level = 0 then
       FreeNodeData(TreeView1.Items[i]);
+  FSettings.Save;
+  FSettings.Free;
 end;
 
 // ── Tree ──────────────────────────────────────────────────────────────────────
@@ -219,6 +240,58 @@ end;
 
 // ── Actions ───────────────────────────────────────────────────────────────────
 
+procedure TForm1.LoadProjectDir(const ADir: string);
+begin
+  SaveCurrentFile;
+  FCurrentFile := '';
+  SynEditSend.Lines.Clear;
+  SynEditResult.Lines.Clear;
+  FProjectDir := ADir;
+  LoadTree;
+  Caption := APP_NAME + ' — ' + ADir;
+  StatusBar1.SimpleText := 'Opened: ' + ADir;
+end;
+
+procedure TForm1.RebuildRecentMenu;
+var
+  i: Integer;
+  Item: TMenuItem;
+begin
+  while MenuItemRecent.Count > 0 do
+    MenuItemRecent.Delete(0);
+  if FSettings.RecentFolders.Count = 0 then
+  begin
+    MenuItemRecent.Enabled := False;
+    Exit;
+  end;
+  MenuItemRecent.Enabled := True;
+  for i := 0 to FSettings.RecentFolders.Count - 1 do
+  begin
+    Item := TMenuItem.Create(MenuItemRecent);
+    Item.Caption := FSettings.RecentFolders[i];
+    Item.Tag     := i;
+    Item.OnClick := @RecentFolderClick;
+    MenuItemRecent.Add(Item);
+  end;
+end;
+
+procedure TForm1.RecentFolderClick(Sender: TObject);
+var
+  Path: string;
+begin
+  Path := TMenuItem(Sender).Caption;
+  if not DirectoryExists(Path) then
+  begin
+    ShowMessage('Folder no longer exists:' + LineEnding + Path);
+    FSettings.RecentFolders.Delete(TMenuItem(Sender).Tag);
+    RebuildRecentMenu;
+    Exit;
+  end;
+  LoadProjectDir(Path);
+  FSettings.AddRecentFolder(Path);
+  RebuildRecentMenu;
+end;
+
 procedure TForm1.actOpenFolderExecute(Sender: TObject);
 var
   Dir: string;
@@ -226,13 +299,9 @@ begin
   Dir := FProjectDir;
   if SelectDirectory('Select REST project folder', '', Dir) then
   begin
-    SaveCurrentFile;
-    FCurrentFile := '';
-    SynEditSend.Lines.Clear;
-    SynEditResult.Lines.Clear;
-    FProjectDir := Dir;
-    LoadTree;
-    StatusBar1.SimpleText := 'Opened: ' + Dir;
+    LoadProjectDir(Dir);
+    FSettings.AddRecentFolder(Dir);
+    RebuildRecentMenu;
   end;
 end;
 
