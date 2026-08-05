@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ComCtrls, ExtCtrls,
-  Menus, ActnList, StdCtrls, Clipbrd,
+  Menus, ActnList, StdCtrls, Clipbrd, FileUtil, SynEditTypes,
   SynEdit, fphttpclient, opensslsockets, fpjson, jsonparser,
   settings, aboutdlg;
 
@@ -23,6 +23,10 @@ type
     actNewFile: TAction;
     actCopyResult: TAction;
     actAbout: TAction;
+    actNewFolder: TAction;
+    actRename: TAction;
+    actDelete: TAction;
+    actDuplicate: TAction;
     ImageList1: TImageList;
     MainMenu1: TMainMenu;
     MenuFile: TMenuItem;
@@ -51,7 +55,12 @@ type
     PanelLeft: TPanel;
     TreeView1: TTreeView;
     PopupMenuTree: TPopupMenu;
+    PopupItemNewFolder: TMenuItem;
     PopupItemNewFile: TMenuItem;
+    PopupItemDuplicate: TMenuItem;
+    PopupItemRename: TMenuItem;
+    PopupItemDelete: TMenuItem;
+    PopupItemSep1: TMenuItem;
     PopupItemRefresh: TMenuItem;
     SplitterMain: TSplitter;
     PanelRight: TPanel;
@@ -69,6 +78,11 @@ type
     procedure actNewFileExecute(Sender: TObject);
     procedure actCopyResultExecute(Sender: TObject);
     procedure actAboutExecute(Sender: TObject);
+    procedure actNewFolderExecute(Sender: TObject);
+    procedure actRenameExecute(Sender: TObject);
+    procedure actDeleteExecute(Sender: TObject);
+    procedure actDuplicateExecute(Sender: TObject);
+    procedure PopupMenuTreePopup(Sender: TObject);
     procedure TreeView1Change(Sender: TObject; Node: TTreeNode);
     procedure MenuItemExitClick(Sender: TObject);
   private
@@ -82,6 +96,7 @@ type
     procedure LoadProjectDir(const ADir: string);
     procedure RebuildRecentMenu;
     procedure RecentFolderClick(Sender: TObject);
+    function  GetSelectedDir: string;
     function  BeautifyJSON(const S: string): string;
     procedure ParseAndSend;
   public
@@ -100,6 +115,10 @@ implementation
 procedure TForm1.FormCreate(Sender: TObject);
 begin
   SynEditResult.ReadOnly := True;
+  SynEditSend.Keystrokes.ResetDefaults;
+  SynEditResult.Keystrokes.ResetDefaults;
+  SynEditSend.Options   := SynEditSend.Options   - [eoScrollPastEol];
+  SynEditResult.Options := SynEditResult.Options - [eoScrollPastEol];
   FProjectDir  := '';
   FCurrentFile := '';
   FSettings := TAppSettings.Create;
@@ -123,26 +142,15 @@ begin
 end;
 
 procedure TForm1.FormDestroy(Sender: TObject);
-
-  procedure FreeNodeData(Node: TTreeNode);
-  var
-    i: Integer;
-  begin
-    if Assigned(Node.Data) then
-    begin
-      Dispose(PString(Node.Data));
-      Node.Data := nil;
-    end;
-    for i := 0 to Node.Count - 1 do
-      FreeNodeData(Node.Items[i]);
-  end;
-
 var
   i: Integer;
 begin
   for i := 0 to TreeView1.Items.Count - 1 do
-    if TreeView1.Items[i].Level = 0 then
-      FreeNodeData(TreeView1.Items[i]);
+    if Assigned(TreeView1.Items[i].Data) then
+    begin
+      Dispose(PString(TreeView1.Items[i].Data));
+      TreeView1.Items[i].Data := nil;
+    end;
   FSettings.Save;
   FSettings.Free;
 end;
@@ -237,12 +245,32 @@ begin
   SaveCurrentFile;
   FCurrentFile := APath;
   SynEditSend.Lines.LoadFromFile(APath);
+  SynEditSend.CaretXY := Point(1, 1);
   SynEditResult.Lines.Clear;
   StatusBar1.SimpleText := APath;
   actSend.Enabled := True;
 end;
 
 // ── Actions ───────────────────────────────────────────────────────────────────
+
+function TForm1.GetSelectedDir: string;
+var
+  Node, N: TTreeNode;
+begin
+  Node := TreeView1.Selected;
+  if not Assigned(Node) then begin Result := FProjectDir; Exit; end;
+  if Assigned(Node.Data) then begin Result := ExtractFileDir(PString(Node.Data)^); Exit; end;
+  // Directory node — rebuild path from tree
+  Result := '';
+  N := Node;
+  while Assigned(N) and (N.Level > 0) do
+  begin
+    if Result = '' then Result := N.Text
+    else Result := N.Text + '\' + Result;
+    N := N.Parent;
+  end;
+  Result := FProjectDir + '\' + Result;
+end;
 
 procedure TForm1.LoadProjectDir(const ADir: string);
 begin
@@ -324,42 +352,13 @@ procedure TForm1.actNewFileExecute(Sender: TObject);
 var
   FileName, FilePath: string;
   TargetDir: string;
-  Node, N: TTreeNode;
+  Node: TTreeNode;
   P: PString;
   NewNode: TTreeNode;
 begin
   if FProjectDir = '' then Exit;
-
-  // Determine target directory from selected node
+  TargetDir := GetSelectedDir;
   Node := TreeView1.Selected;
-  if Assigned(Node) and not Assigned(Node.Data) then
-    TargetDir := FProjectDir + '\' + Node.Text  // rough — use stored path for dirs
-  else
-    TargetDir := FProjectDir;
-
-  // For directory nodes we need the real path — rebuild from node path
-  if Assigned(Node) then
-  begin
-    if not Assigned(Node.Data) then
-    begin
-      // Build path from root
-      TargetDir := '';
-      N := Node;
-      while Assigned(N) and (N.Level > 0) do
-      begin
-        if TargetDir = '' then
-          TargetDir := N.Text
-        else
-          TargetDir := N.Text + '\' + TargetDir;
-        N := N.Parent;
-      end;
-      TargetDir := FProjectDir + '\' + TargetDir;
-    end
-    else
-      TargetDir := ExtractFileDir(PString(Node.Data)^);
-  end
-  else
-    TargetDir := FProjectDir;
 
   FileName := '';
   if not InputQuery('New REST File', 'File name (without .rest):', FileName) then Exit;
@@ -367,21 +366,10 @@ begin
   if FileName = '' then Exit;
 
   FilePath := TargetDir + '\' + FileName + '.rest';
-  if FileExists(FilePath) then
-  begin
-    ShowMessage('File already exists: ' + FilePath);
-    Exit;
-  end;
+  if FileExists(FilePath) then begin ShowMessage('File already exists: ' + FilePath); Exit; end;
 
-  // Create empty file
-  with TStringList.Create do
-  try
-    SaveToFile(FilePath);
-  finally
-    Free;
-  end;
+  with TStringList.Create do try SaveToFile(FilePath); finally Free; end;
 
-  // Add node to tree
   TreeView1.Items.BeginUpdate;
   try
     if Assigned(Node) and not Assigned(Node.Data) then
@@ -390,15 +378,190 @@ begin
       NewNode := TreeView1.Items.AddChild(Node.Parent, FileName)
     else
       NewNode := TreeView1.Items.AddChild(TreeView1.Items[0], FileName);
-    New(P);
-    P^ := FilePath;
-    NewNode.Data := P;
+    New(P); P^ := FilePath; NewNode.Data := P;
+    NewNode.ImageIndex := 3; NewNode.SelectedIndex := 3;
   finally
     TreeView1.Items.EndUpdate;
   end;
-
   TreeView1.Selected := NewNode;
   OpenFile(FilePath);
+  SynEditSend.SetFocus;
+end;
+
+procedure TForm1.actNewFolderExecute(Sender: TObject);
+var
+  FolderName, FolderPath: string;
+  Node, NewNode: TTreeNode;
+begin
+  if FProjectDir = '' then Exit;
+  Node := TreeView1.Selected;
+  // Target must be a directory node
+  if Assigned(Node) and Assigned(Node.Data) then
+    Node := Node.Parent;
+
+  FolderName := '';
+  if not InputQuery('New Folder', 'Folder name:', FolderName) then Exit;
+  FolderName := Trim(FolderName);
+  if FolderName = '' then Exit;
+
+  FolderPath := GetSelectedDir;
+  // If a file was selected, GetSelectedDir already returned parent dir
+  // but Node was moved to parent above, so recalc
+  if Assigned(Node) and Assigned(Node.Data) then
+    FolderPath := ExtractFileDir(PString(Node.Data)^);
+
+  FolderPath := FolderPath + '\' + FolderName;
+  if DirectoryExists(FolderPath) then begin ShowMessage('Folder already exists: ' + FolderPath); Exit; end;
+  if not CreateDir(FolderPath) then begin ShowMessage('Could not create folder: ' + FolderPath); Exit; end;
+
+  TreeView1.Items.BeginUpdate;
+  try
+    if Assigned(Node) then
+      NewNode := TreeView1.Items.AddChild(Node, FolderName)
+    else
+      NewNode := TreeView1.Items.AddChild(TreeView1.Items[0], FolderName);
+    NewNode.ImageIndex := 4; NewNode.SelectedIndex := 4;
+  finally
+    TreeView1.Items.EndUpdate;
+  end;
+  TreeView1.Selected := NewNode;
+end;
+
+procedure TForm1.actRenameExecute(Sender: TObject);
+var
+  Node: TTreeNode;
+  OldPath, NewPath, NewName: string;
+  P: PString;
+begin
+  Node := TreeView1.Selected;
+  if not Assigned(Node) or (Node.Level = 0) then Exit;
+
+  NewName := Node.Text;
+  if not InputQuery('Rename', 'New name:', NewName) then Exit;
+  NewName := Trim(NewName);
+  if (NewName = '') or (NewName = Node.Text) then Exit;
+
+  if Assigned(Node.Data) then
+  begin
+    // File
+    OldPath := PString(Node.Data)^;
+    NewPath := ExtractFileDir(OldPath) + '\' + NewName + '.rest';
+    if FileExists(NewPath) then begin ShowMessage('File already exists: ' + NewPath); Exit; end;
+    if not RenameFile(OldPath, NewPath) then begin ShowMessage('Could not rename file.'); Exit; end;
+    Dispose(PString(Node.Data));
+    New(P);
+    P^ := NewPath;
+    Node.Data := P;
+    if FCurrentFile = OldPath then FCurrentFile := NewPath;
+  end
+  else
+  begin
+    // Folder — rebuild old path then rename
+    OldPath := GetSelectedDir;
+    NewPath := ExtractFileDir(OldPath) + '\' + NewName;
+    if DirectoryExists(NewPath) then begin ShowMessage('Folder already exists: ' + NewPath); Exit; end;
+    if not RenameFile(OldPath, NewPath) then begin ShowMessage('Could not rename folder.'); Exit; end;
+    // Reload tree — paths inside folder all changed
+    SaveCurrentFile;
+    FCurrentFile := '';
+    SynEditSend.Lines.Clear;
+    SynEditResult.Lines.Clear;
+    LoadTree;
+    Exit;
+  end;
+  Node.Text := NewName;
+end;
+
+procedure TForm1.actDeleteExecute(Sender: TObject);
+var
+  Node: TTreeNode;
+  Path: string;
+begin
+  Node := TreeView1.Selected;
+  if not Assigned(Node) or (Node.Level = 0) then Exit;
+
+  if Assigned(Node.Data) then
+  begin
+    Path := PString(Node.Data)^;
+    if MessageDlg(Format('Delete file ''%s''?', [ExtractFileName(Path)]),
+        mtConfirmation, [mbYes, mbNo], 0) <> mrYes then Exit;
+    if not DeleteFile(Path) then begin ShowMessage('Could not delete file.'); Exit; end;
+    if FCurrentFile = Path then
+    begin
+      FCurrentFile := '';
+      SynEditSend.Lines.Clear;
+      SynEditResult.Lines.Clear;
+      actSend.Enabled := False;
+    end;
+    Dispose(PString(Node.Data)); Node.Data := nil;
+  end
+  else
+  begin
+    Path := GetSelectedDir;
+    if MessageDlg(Format('Delete folder ''%s'' and all its contents?', [Node.Text]),
+        mtConfirmation, [mbYes, mbNo], 0) <> mrYes then Exit;
+    if not DeleteDirectory(Path, True) then begin ShowMessage('Could not delete folder.'); Exit; end;
+    FCurrentFile := '';
+    SynEditSend.Lines.Clear;
+    SynEditResult.Lines.Clear;
+    actSend.Enabled := False;
+  end;
+  Node.Delete;
+end;
+
+procedure TForm1.actDuplicateExecute(Sender: TObject);
+var
+  Node, NewNode: TTreeNode;
+  OldPath, NewPath, NewName: string;
+  P: PString;
+begin
+  Node := TreeView1.Selected;
+  if not Assigned(Node) or not Assigned(Node.Data) then Exit;
+
+  OldPath := PString(Node.Data)^;
+  NewName := Node.Text + '_copy';
+  if not InputQuery('Duplicate', 'New file name (without .rest):', NewName) then Exit;
+  NewName := Trim(NewName);
+  if NewName = '' then Exit;
+
+  NewPath := ExtractFileDir(OldPath) + '\' + NewName + '.rest';
+  if FileExists(NewPath) then begin ShowMessage('File already exists: ' + NewPath); Exit; end;
+  if not CopyFile(OldPath, NewPath) then begin ShowMessage('Could not duplicate file.'); Exit; end;
+
+  TreeView1.Items.BeginUpdate;
+  try
+    NewNode := TreeView1.Items.AddChild(Node.Parent, NewName);
+    New(P); P^ := NewPath; NewNode.Data := P;
+    NewNode.ImageIndex := 3; NewNode.SelectedIndex := 3;
+  finally
+    TreeView1.Items.EndUpdate;
+  end;
+  TreeView1.Selected := NewNode;
+  OpenFile(NewPath);
+end;
+
+procedure TForm1.PopupMenuTreePopup(Sender: TObject);
+var
+  Node: TTreeNode;
+  IsFile, IsDir, IsRoot, HasProject: Boolean;
+begin
+  Node       := TreeView1.Selected;
+  HasProject := FProjectDir <> '';
+  IsFile     := Assigned(Node) and Assigned(Node.Data);
+  IsDir      := Assigned(Node) and not Assigned(Node.Data) and (Node.Level > 0);
+  IsRoot     := Assigned(Node) and (Node.Level = 0);
+
+  PopupItemNewFolder.Enabled  := HasProject;
+  PopupItemNewFile.Enabled    := HasProject;
+  PopupItemDuplicate.Enabled  := IsFile;
+  PopupItemRename.Enabled     := IsFile or IsDir;
+  PopupItemDelete.Enabled     := IsFile or IsDir;
+  actNewFolder.Enabled        := HasProject;
+  actRename.Enabled           := IsFile or IsDir;
+  actDelete.Enabled           := IsFile or IsDir;
+  actDuplicate.Enabled        := IsFile;
+  // suppress unused warning
+  if IsRoot then ;
 end;
 
 procedure TForm1.actAboutExecute(Sender: TObject);

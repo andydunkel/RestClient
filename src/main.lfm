@@ -119,13 +119,13 @@ object Form1: TForm1
       Width = 955
       Align = alTop
       Font.Height = -13
-      Font.Name = 'Courier New'
+      Font.Name = 'Consolas'
       Font.Pitch = fpFixed
-      Font.Quality = fqNonAntialiased
+      Font.Quality = fqCleartype
       ParentColor = False
       ParentFont = False
       TabOrder = 0
-      Gutter.Width = 57
+      Gutter.Width = 55
       Gutter.MouseActions = <>
       RightGutter.Width = 0
       RightGutter.MouseActions = <>
@@ -162,7 +162,7 @@ object Form1: TForm1
           MarkupInfo.Foreground = clNone
         end
         object SynGutterLineNumber1: TSynGutterLineNumber
-          Width = 17
+          Width = 15
           MouseActions = <>
           MarkupInfo.Background = clBtnFace
           MarkupInfo.Foreground = clNone
@@ -211,13 +211,13 @@ object Form1: TForm1
       Width = 955
       Align = alClient
       Font.Height = -13
-      Font.Name = 'Courier New'
+      Font.Name = 'Consolas'
       Font.Pitch = fpFixed
-      Font.Quality = fqNonAntialiased
+      Font.Quality = fqCleartype
       ParentColor = False
       ParentFont = False
       TabOrder = 1
-      Gutter.Width = 57
+      Gutter.Width = 55
       Gutter.MouseActions = <>
       RightGutter.Width = 0
       RightGutter.MouseActions = <>
@@ -255,7 +255,7 @@ object Form1: TForm1
           MarkupInfo.Foreground = clNone
         end
         object SynGutterLineNumber1: TSynGutterLineNumber
-          Width = 17
+          Width = 15
           MouseActions = <>
           MarkupInfo.Background = clBtnFace
           MarkupInfo.Foreground = clNone
@@ -389,6 +389,30 @@ object Form1: TForm1
       ImageIndex = 0
       OnExecute = actAboutExecute
     end
+    object actNewFolder: TAction
+      Caption = 'New Folder'
+      Enabled = False
+      Hint = 'Create new folder'
+      OnExecute = actNewFolderExecute
+    end
+    object actRename: TAction
+      Caption = 'Rename'
+      Enabled = False
+      Hint = 'Rename file or folder'
+      OnExecute = actRenameExecute
+    end
+    object actDelete: TAction
+      Caption = 'Delete'
+      Enabled = False
+      Hint = 'Delete file or folder'
+      OnExecute = actDeleteExecute
+    end
+    object actDuplicate: TAction
+      Caption = 'Duplicate'
+      Enabled = False
+      Hint = 'Duplicate file'
+      OnExecute = actDuplicateExecute
+    end
     object actExit: TAction
       Caption = '&Exit'
       ImageIndex = 2
@@ -396,10 +420,26 @@ object Form1: TForm1
     end
   end
   object PopupMenuTree: TPopupMenu
+    OnPopup = PopupMenuTreePopup
     Left = 320
     Top = 184
+    object PopupItemNewFolder: TMenuItem
+      Action = actNewFolder
+    end
     object PopupItemNewFile: TMenuItem
       Action = actNewFile
+    end
+    object PopupItemDuplicate: TMenuItem
+      Action = actDuplicate
+    end
+    object PopupItemRename: TMenuItem
+      Action = actRename
+    end
+    object PopupItemDelete: TMenuItem
+      Action = actDelete
+    end
+    object PopupItemSep1: TMenuItem
+      Caption = '-'
     end
     object PopupItemRefresh: TMenuItem
       Action = actRefresh
