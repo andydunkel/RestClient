@@ -8,7 +8,7 @@ uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ComCtrls, ExtCtrls,
   Menus, ActnList, StdCtrls, Clipbrd, FileUtil, SynEditTypes,
   SynEdit, fphttpclient, opensslsockets, fpjson, jsonparser,
-  settings, aboutdlg;
+  settings, aboutdlg, httphighlighter;
 
 type
 
@@ -114,6 +114,7 @@ type
     FSettings: TAppSettings;
     FRequestThread: TRequestThread;
     FProgressBar: TProgressBar;
+    FHighlighter: THTTPHighlighter;
     procedure LoadTree;
     procedure FillNode(ParentNode: TTreeNode; const Dir: string);
     procedure SaveCurrentFile;
@@ -244,6 +245,9 @@ begin
   FProjectDir  := '';
   FCurrentFile := '';
   FRequestThread := nil;
+  FHighlighter := THTTPHighlighter.Create(Self);
+  SynEditSend.Highlighter   := FHighlighter;
+  SynEditResult.Highlighter := FHighlighter;
   // Setup marquee progressbar inside statusbar
   FProgressBar         := TProgressBar.Create(Self);
   FProgressBar.Parent  := StatusBar1;
