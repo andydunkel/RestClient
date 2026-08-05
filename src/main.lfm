@@ -109,12 +109,15 @@ object Form1: TForm1
       Top = 0
       Width = 240
       Align = alClient
+      DragMode = dmAutomatic
       Images = ImageList1
       PopupMenu = PopupMenuTree
       ReadOnly = True
       TabOrder = 0
       Options = [tvoAutoItemHeight, tvoHideSelection, tvoKeepCollapsedNodes, tvoReadOnly, tvoShowButtons, tvoShowLines, tvoShowRoot, tvoToolTips, tvoThemedDraw]
       OnChange = TreeView1Change
+      OnDragDrop = TreeView1DragDrop
+      OnDragOver = TreeView1DragOver
     end
   end
   object SplitterMain: TSplitter

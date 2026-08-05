@@ -107,6 +107,8 @@ type
     procedure actDuplicateExecute(Sender: TObject);
     procedure PopupMenuTreePopup(Sender: TObject);
     procedure TreeView1Change(Sender: TObject; Node: TTreeNode);
+    procedure TreeView1DragOver(Sender, Source: TObject; X, Y: Integer; State: TDragState; var Accept: Boolean);
+    procedure TreeView1DragDrop(Sender, Source: TObject; X, Y: Integer);
     procedure MenuItemExitClick(Sender: TObject);
   private
     FProjectDir: string;
@@ -126,6 +128,8 @@ type
     function  BeautifyJSON(const S: string): string;
     procedure ParseAndSend;
     procedure SetBusy(ABusy: Boolean);
+    function  IsAncestor(AParent, ANode: TTreeNode): Boolean;
+    function  GetNodePath(ANode: TTreeNode): string;
   public
 
   end;
@@ -729,6 +733,137 @@ procedure TForm1.MenuItemExitClick(Sender: TObject);
 begin
   SaveCurrentFile;
   Close;
+end;
+
+// ── Drag & Drop ──────────────────────────────────────────────────────────────
+
+function TForm1.GetNodePath(ANode: TTreeNode): string;
+begin
+  if Assigned(ANode.Data) then
+    Result := PString(ANode.Data)^
+  else
+    Result := GetSelectedDir; // reuse — but we need node-specific version
+end;
+
+function TForm1.IsAncestor(AParent, ANode: TTreeNode): Boolean;
+var
+  N: TTreeNode;
+begin
+  Result := False;
+  N := ANode.Parent;
+  while Assigned(N) do
+  begin
+    if N = AParent then begin Result := True; Exit; end;
+    N := N.Parent;
+  end;
+end;
+
+procedure TForm1.TreeView1DragOver(Sender, Source: TObject; X, Y: Integer;
+  State: TDragState; var Accept: Boolean);
+var
+  DragNode, TargetNode: TTreeNode;
+begin
+  Accept := False;
+  if Source <> TreeView1 then Exit;
+  DragNode   := TreeView1.Selected;
+  TargetNode := TreeView1.GetNodeAt(X, Y);
+  if not Assigned(DragNode) or not Assigned(TargetNode) then Exit;
+  if DragNode = TargetNode then Exit;
+  // Cannot drag root
+  if DragNode.Level = 0 then Exit;
+  // Target must be a folder (no Data) or root
+  if Assigned(TargetNode.Data) then Exit;
+  // Cannot drop into own subtree
+  if IsAncestor(DragNode, TargetNode) then Exit;
+  // Cannot drop into current parent (already there)
+  if TargetNode = DragNode.Parent then Exit;
+  Accept := True;
+end;
+
+procedure TForm1.TreeView1DragDrop(Sender, Source: TObject; X, Y: Integer);
+var
+  DragNode, TargetNode: TTreeNode;
+  OldPath, NewPath, TargetDir: string;
+  P: PString;
+
+  function NodeDir(N: TTreeNode): string;
+  var
+    Cur: TTreeNode;
+    Parts: string;
+  begin
+    if N.Level = 0 then begin Result := FProjectDir; Exit; end;
+    Parts := '';
+    Cur := N;
+    while Assigned(Cur) and (Cur.Level > 0) do
+    begin
+      if Parts = '' then Parts := Cur.Text
+      else Parts := Cur.Text + PathDelim + Parts;
+      Cur := Cur.Parent;
+    end;
+    Result := FProjectDir + PathDelim + Parts;
+  end;
+
+begin
+  DragNode   := TreeView1.Selected;
+  TargetNode := TreeView1.GetNodeAt(X, Y);
+  if not Assigned(DragNode) or not Assigned(TargetNode) then Exit;
+
+  TargetDir := NodeDir(TargetNode);
+
+  if Assigned(DragNode.Data) then
+  begin
+    // ── File move ──
+    OldPath := PString(DragNode.Data)^;
+    NewPath := TargetDir + PathDelim + ExtractFileName(OldPath);
+    if FileExists(NewPath) then
+    begin
+      ShowMessage('A file with that name already exists in the target folder.');
+      Exit;
+    end;
+    if not RenameFile(OldPath, NewPath) then
+    begin
+      ShowMessage('Could not move file.');
+      Exit;
+    end;
+    // Update pointer
+    Dispose(PString(DragNode.Data));
+    New(P); P^ := NewPath;
+    DragNode.Data := P;
+    if FCurrentFile = OldPath then FCurrentFile := NewPath;
+  end
+  else
+  begin
+    // ── Folder move ──
+    OldPath := NodeDir(DragNode);
+    NewPath := TargetDir + PathDelim + DragNode.Text;
+    if DirectoryExists(NewPath) then
+    begin
+      ShowMessage('A folder with that name already exists in the target folder.');
+      Exit;
+    end;
+    if not RenameFile(OldPath, NewPath) then
+    begin
+      ShowMessage('Could not move folder.');
+      Exit;
+    end;
+    // Paths inside changed — reload tree
+    SaveCurrentFile;
+    FCurrentFile := '';
+    SynEditSend.Lines.Clear;
+    SynEditResult.Lines.Clear;
+    actSend.Enabled := False;
+    LoadTree;
+    Exit;
+  end;
+
+  // Move node in tree
+  TreeView1.Items.BeginUpdate;
+  try
+    DragNode.MoveTo(TargetNode, naAddChild);
+  finally
+    TreeView1.Items.EndUpdate;
+  end;
+  TreeView1.Selected := DragNode;
 end;
 
 // ── HTTP ──────────────────────────────────────────────────────────────────────
