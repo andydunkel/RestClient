@@ -4,8 +4,6 @@ object Form1: TForm1
   Top = 100
   Width = 1200
   Caption = 'REST Client'
-  ClientHeight = 750
-  ClientWidth = 1200
   Menu = MainMenu1
   Position = poScreenCenter
   LCLVersion = '4.8.0.0'
