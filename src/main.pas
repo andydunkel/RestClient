@@ -12,6 +12,24 @@ uses
 
 type
 
+  { TRequestThread }
+
+  TRequestThread = class(TThread)
+  private
+    FRequestText: string;
+    FResultText:  string;
+    FStatusText:  string;
+    FErrorMsg:    string;
+    function  BeautifyJSON(const S: string): string;
+  protected
+    procedure Execute; override;
+  public
+    constructor Create(const ARequestText: string);
+    property ResultText: string read FResultText;
+    property StatusText: string read FStatusText;
+    property ErrorMsg:   string read FErrorMsg;
+  end;
+
   { TForm1 }
 
   TForm1 = class(TForm)
@@ -79,6 +97,7 @@ type
     procedure actOpenFolderExecute(Sender: TObject);
     procedure actRefreshExecute(Sender: TObject);
     procedure actSendExecute(Sender: TObject);
+    procedure OnRequestDone(Sender: TObject);
     procedure actNewFileExecute(Sender: TObject);
     procedure actCopyResultExecute(Sender: TObject);
     procedure actAboutExecute(Sender: TObject);
@@ -93,6 +112,8 @@ type
     FProjectDir: string;
     FCurrentFile: string;
     FSettings: TAppSettings;
+    FRequestThread: TRequestThread;
+    FProgressBar: TProgressBar;
     procedure LoadTree;
     procedure FillNode(ParentNode: TTreeNode; const Dir: string);
     procedure SaveCurrentFile;
@@ -103,6 +124,7 @@ type
     function  GetSelectedDir: string;
     function  BeautifyJSON(const S: string): string;
     procedure ParseAndSend;
+    procedure SetBusy(ABusy: Boolean);
   public
 
   end;
@@ -113,6 +135,102 @@ var
 implementation
 
 {$R *.lfm}
+
+{ TRequestThread }
+
+constructor TRequestThread.Create(const ARequestText: string);
+begin
+  inherited Create(True);
+  FreeOnTerminate := False;
+  FRequestText    := ARequestText;
+end;
+
+function TRequestThread.BeautifyJSON(const S: string): string;
+var
+  J: TJSONData;
+begin
+  Result := S;
+  if Trim(S) = '' then Exit;
+  try
+    J := GetJSON(S);
+    try Result := J.FormatJSON; finally J.Free; end;
+  except
+  end;
+end;
+
+procedure TRequestThread.Execute;
+var
+  Lines, BodyLines, ResultLines: TStringList;
+  Client: TFPHTTPClient;
+  ResponseStream, RequestBodyStream: TStringStream;
+  FirstLine, Method, FullURL, Line, HeaderName, HeaderValue: string;
+  i, SpacePos, ColonPos: Integer;
+begin
+  Lines         := TStringList.Create;
+  BodyLines     := TStringList.Create;
+  ResponseStream := TStringStream.Create('');
+  ResultLines   := TStringList.Create;
+  Client        := TFPHTTPClient.Create(nil);
+  try
+    Lines.Text := FRequestText;
+    if Lines.Count = 0 then begin FErrorMsg := 'Error: Empty request'; Exit; end;
+
+    FirstLine := Trim(Lines[0]);
+    SpacePos  := Pos(' ', FirstLine);
+    if SpacePos = 0 then begin FErrorMsg := 'Error: First line must be "METHOD URL"'; Exit; end;
+    Method  := UpperCase(Trim(Copy(FirstLine, 1, SpacePos - 1)));
+    FullURL := Trim(Copy(FirstLine, SpacePos + 1, Length(FirstLine)));
+
+    i := 1;
+    while (i < Lines.Count) and (Trim(Lines[i]) <> '') do
+    begin
+      Line     := Lines[i];
+      ColonPos := Pos(':', Line);
+      if ColonPos > 0 then
+      begin
+        HeaderName  := Trim(Copy(Line, 1, ColonPos - 1));
+        HeaderValue := Trim(Copy(Line, ColonPos + 1, Length(Line)));
+        Client.AddHeader(HeaderName, HeaderValue);
+      end;
+      Inc(i);
+    end;
+    if (i < Lines.Count) and (Trim(Lines[i]) = '') then Inc(i);
+    while i < Lines.Count do begin BodyLines.Add(Lines[i]); Inc(i); end;
+
+    Client.AllowRedirect := True;
+    try
+      if BodyLines.Count > 0 then
+      begin
+        RequestBodyStream  := TStringStream.Create(Trim(BodyLines.Text));
+        Client.RequestBody := RequestBodyStream;
+        try
+          Client.HTTPMethod(Method, FullURL, ResponseStream, []);
+        finally
+          Client.RequestBody := nil;
+          RequestBodyStream.Free;
+        end;
+      end
+      else
+        Client.HTTPMethod(Method, FullURL, ResponseStream, []);
+
+      ResultLines.Add(Format('HTTP %d', [Client.ResponseStatusCode]));
+      ResultLines.Add('');
+      for i := 0 to Client.ResponseHeaders.Count - 1 do
+        ResultLines.Add(Client.ResponseHeaders[i]);
+      ResultLines.Add('');
+      ResultLines.Add('--- Body ---');
+      ResultLines.Add('');
+      ResultLines.Add(BeautifyJSON(ResponseStream.DataString));
+      FResultText := ResultLines.Text;
+      FStatusText := Format('HTTP %d  |  %s %s', [Client.ResponseStatusCode, Method, FullURL]);
+    except
+      on E: Exception do
+        FErrorMsg := 'Error: ' + E.Message;
+    end;
+  finally
+    Lines.Free; BodyLines.Free; ResponseStream.Free; ResultLines.Free; Client.Free;
+  end;
+end;
 
 { TForm1 }
 
@@ -125,6 +243,17 @@ begin
   SynEditResult.Options := SynEditResult.Options - [eoScrollPastEol];
   FProjectDir  := '';
   FCurrentFile := '';
+  FRequestThread := nil;
+  // Setup marquee progressbar inside statusbar
+  FProgressBar         := TProgressBar.Create(Self);
+  FProgressBar.Parent  := StatusBar1;
+  FProgressBar.Style   := pbstMarquee;
+  FProgressBar.Width   := 120;
+  FProgressBar.Height  := 16;
+  FProgressBar.Top     := 3;
+  FProgressBar.Left    := StatusBar1.Width - 128;
+  FProgressBar.Anchors := [akRight, akTop];
+  FProgressBar.Visible := False;
   FSettings := TAppSettings.Create;
   FSettings.Load;
 end;
@@ -600,6 +729,40 @@ end;
 
 // ── HTTP ──────────────────────────────────────────────────────────────────────
 
+procedure TForm1.SetBusy(ABusy: Boolean);
+begin
+  actSend.Enabled       := not ABusy;
+  FProgressBar.Visible  := ABusy;
+  if ABusy then
+    FProgressBar.Left := StatusBar1.Width - 128;
+end;
+
+procedure TForm1.OnRequestDone(Sender: TObject);
+begin
+  SetBusy(False);
+  if FRequestThread.ErrorMsg <> '' then
+  begin
+    SynEditResult.Lines.Text := FRequestThread.ErrorMsg;
+    StatusBar1.SimpleText    := FRequestThread.ErrorMsg;
+  end
+  else
+  begin
+    SynEditResult.Lines.Text := FRequestThread.ResultText;
+    StatusBar1.SimpleText    := FRequestThread.StatusText;
+  end;
+  FreeAndNil(FRequestThread);
+end;
+
+procedure TForm1.ParseAndSend;
+begin
+  if FRequestThread <> nil then Exit; // already running
+  SetBusy(True);
+  StatusBar1.SimpleText := 'Sending...';
+  FRequestThread := TRequestThread.Create(SynEditSend.Lines.Text);
+  FRequestThread.OnTerminate := @OnRequestDone;
+  FRequestThread.Start;
+end;
+
 function TForm1.BeautifyJSON(const S: string): string;
 var
   J: TJSONData;
@@ -615,85 +778,6 @@ begin
     end;
   except
     // not valid JSON — return raw
-  end;
-end;
-
-procedure TForm1.ParseAndSend;
-var
-  Lines, BodyLines, ResultText: TStringList;
-  Client: TFPHTTPClient;
-  ResponseStream, RequestBodyStream: TStringStream;
-  FirstLine, Method, FullURL, Line, HeaderName, HeaderValue: string;
-  i, SpacePos, ColonPos: Integer;
-begin
-  Lines          := TStringList.Create;
-  BodyLines      := TStringList.Create;
-  ResponseStream := TStringStream.Create('');
-  ResultText     := TStringList.Create;
-  Client         := TFPHTTPClient.Create(nil);
-  try
-    Lines.Text := SynEditSend.Lines.Text;
-    if Lines.Count = 0 then begin SynEditResult.Lines.Text := 'Error: Empty request'; Exit; end;
-
-    FirstLine := Trim(Lines[0]);
-    SpacePos  := Pos(' ', FirstLine);
-    if SpacePos = 0 then begin SynEditResult.Lines.Text := 'Error: First line must be "METHOD URL"'; Exit; end;
-    Method  := UpperCase(Trim(Copy(FirstLine, 1, SpacePos - 1)));
-    FullURL := Trim(Copy(FirstLine, SpacePos + 1, Length(FirstLine)));
-
-    i := 1;
-    while (i < Lines.Count) and (Trim(Lines[i]) <> '') do
-    begin
-      Line     := Lines[i];
-      ColonPos := Pos(':', Line);
-      if ColonPos > 0 then
-      begin
-        HeaderName  := Trim(Copy(Line, 1, ColonPos - 1));
-        HeaderValue := Trim(Copy(Line, ColonPos + 1, Length(Line)));
-        Client.AddHeader(HeaderName, HeaderValue);
-      end;
-      Inc(i);
-    end;
-    if (i < Lines.Count) and (Trim(Lines[i]) = '') then Inc(i);
-    while i < Lines.Count do begin BodyLines.Add(Lines[i]); Inc(i); end;
-
-    Client.AllowRedirect := True;
-    try
-      if BodyLines.Count > 0 then
-      begin
-        RequestBodyStream  := TStringStream.Create(Trim(BodyLines.Text));
-        Client.RequestBody := RequestBodyStream;
-        try
-          Client.HTTPMethod(Method, FullURL, ResponseStream, []);
-        finally
-          Client.RequestBody := nil;
-          RequestBodyStream.Free;
-        end;
-      end
-      else
-        Client.HTTPMethod(Method, FullURL, ResponseStream, []);
-
-      ResultText.Add(Format('HTTP %d', [Client.ResponseStatusCode]));
-      ResultText.Add('');
-      for i := 0 to Client.ResponseHeaders.Count - 1 do
-        ResultText.Add(Client.ResponseHeaders[i]);
-      ResultText.Add('');
-      ResultText.Add('--- Body ---');
-      ResultText.Add('');
-      ResultText.Add(BeautifyJSON(ResponseStream.DataString));
-      StatusBar1.SimpleText := Format('HTTP %d  |  %s %s', [Client.ResponseStatusCode, Method, FullURL]);
-    except
-      on E: Exception do
-      begin
-        ResultText.Clear;
-        ResultText.Add('Error: ' + E.Message);
-        StatusBar1.SimpleText := 'Error: ' + E.Message;
-      end;
-    end;
-
-    SynEditResult.Lines.Text := ResultText.Text;
-  finally
-    Lines.Free; BodyLines.Free; ResponseStream.Free; ResultText.Free; Client.Free;
   end;
 end;
 

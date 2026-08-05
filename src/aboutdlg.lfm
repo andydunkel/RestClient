@@ -53,16 +53,23 @@ object TAboutForm: TAboutForm
         Font.Style = [fsBold]
         ParentFont = False
       end
+      object LabelVersion: TLabel
+        Left = 0
+        Top = 50
+        Width = 330
+        Height = 16
+        Caption = ''
+      end
       object LabelCopyright: TLabel
         Left = 0
-        Top = 58
+        Top = 72
         Width = 330
         Height = 16
         Caption = 'Copyright 2026 Andy Dunkel (andy.dunkel@ekiwi.de)'
       end
       object LabelURL: TLabel
         Left = 0
-        Top = 82
+        Top = 94
         Width = 330
         Height = 16
         Caption = 'https://da-software.net'
@@ -73,7 +80,7 @@ object TAboutForm: TAboutForm
       end
       object LabelFreeware: TLabel
         Left = 0
-        Top = 114
+        Top = 118
         Width = 330
         Height = 16
         Caption = 'This software is freeware.'

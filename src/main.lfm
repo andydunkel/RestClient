@@ -316,6 +316,7 @@ object Form1: TForm1
     Top = 727
     Width = 1200
     Panels = <>
+    SimplePanel = True
     SimpleText = 'Ready'
   end
   object MainMenu1: TMainMenu
