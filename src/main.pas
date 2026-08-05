@@ -8,7 +8,7 @@ uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ComCtrls, ExtCtrls,
   Menus, ActnList, StdCtrls, Clipbrd,
   SynEdit, fphttpclient, opensslsockets, fpjson, jsonparser,
-  settings;
+  settings, aboutdlg;
 
 type
 
@@ -22,6 +22,7 @@ type
     actSend: TAction;
     actNewFile: TAction;
     actCopyResult: TAction;
+    actAbout: TAction;
     ImageList1: TImageList;
     MainMenu1: TMainMenu;
     MenuFile: TMenuItem;
@@ -35,6 +36,8 @@ type
     MenuRequest: TMenuItem;
     MenuItemSend: TMenuItem;
     MenuItemCopyResult: TMenuItem;
+    MenuHelp: TMenuItem;
+    MenuItemAbout: TMenuItem;
     ToolBar1: TToolBar;
     ToolButton1: TToolButton;
     ToolButton2: TToolButton;
@@ -65,6 +68,7 @@ type
     procedure actSendExecute(Sender: TObject);
     procedure actNewFileExecute(Sender: TObject);
     procedure actCopyResultExecute(Sender: TObject);
+    procedure actAboutExecute(Sender: TObject);
     procedure TreeView1Change(Sender: TObject; Node: TTreeNode);
     procedure MenuItemExitClick(Sender: TObject);
   private
@@ -395,6 +399,18 @@ begin
 
   TreeView1.Selected := NewNode;
   OpenFile(FilePath);
+end;
+
+procedure TForm1.actAboutExecute(Sender: TObject);
+var
+  F: TAboutForm;
+begin
+  F := TAboutForm.Create(Self);
+  try
+    F.ShowModal;
+  finally
+    F.Free;
+  end;
 end;
 
 procedure TForm1.actCopyResultExecute(Sender: TObject);

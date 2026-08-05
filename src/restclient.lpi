@@ -124,6 +124,13 @@
         <Filename Value="settings.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit>
+      <Unit>
+        <Filename Value="aboutdlg.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="TAboutForm"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

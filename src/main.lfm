@@ -4,6 +4,8 @@ object Form1: TForm1
   Top = 100
   Width = 1200
   Caption = 'REST Client'
+  ClientHeight = 750
+  ClientWidth = 1200
   Menu = MainMenu1
   Position = poScreenCenter
   LCLVersion = '4.8.0.0'
@@ -334,6 +336,12 @@ object Form1: TForm1
         Action = actCopyResult
       end
     end
+    object MenuHelp: TMenuItem
+      Caption = 'Help'
+      object MenuItemAbout: TMenuItem
+        Action = actAbout
+      end
+    end
   end
   object ActionList1: TActionList
     Images = ImageList1
@@ -374,6 +382,12 @@ object Form1: TForm1
       Hint = 'Copy result to clipboard'
       ImageIndex = 9
       OnExecute = actCopyResultExecute
+    end
+    object actAbout: TAction
+      Caption = 'About...'
+      Hint = 'About DA-RestClient'
+      ImageIndex = 0
+      OnExecute = actAboutExecute
     end
     object actExit: TAction
       Caption = '&Exit'

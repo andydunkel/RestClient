@@ -1,0 +1,102 @@
+object TAboutForm: TAboutForm
+  Left = 0
+  Height = 200
+  Top = 0
+  Width = 420
+  BorderIcons = [biSystemMenu]
+  BorderStyle = bsDialog
+  Caption = 'About DA-RestClient'
+  Position = poMainFormCenter
+  LCLVersion = '4.8.0.0'
+  OnCreate = FormCreate
+  object PanelMain: TPanel
+    Left = 0
+    Top = 0
+    Width = 420
+    Height = 160
+    Align = alTop
+    BevelOuter = bvNone
+    TabOrder = 0
+    object PanelLeft: TPanel
+      Left = 0
+      Top = 0
+      Width = 90
+      Height = 160
+      Align = alLeft
+      BevelOuter = bvNone
+      TabOrder = 0
+      object ImageIcon: TImage
+        Left = 15
+        Top = 15
+        Width = 64
+        Height = 64
+        Proportional = True
+        Stretch = True
+      end
+    end
+    object PanelRight: TPanel
+      Left = 90
+      Top = 0
+      Width = 330
+      Height = 160
+      Align = alClient
+      BevelOuter = bvNone
+      TabOrder = 1
+      object LabelAppName: TLabel
+        Left = 0
+        Top = 20
+        Width = 330
+        Height = 26
+        Alignment = taLeftJustify
+        Caption = 'DA-RestClient'
+        Font.Height = -19
+        Font.Style = [fsBold]
+        ParentFont = False
+      end
+      object LabelCopyright: TLabel
+        Left = 0
+        Top = 58
+        Width = 330
+        Height = 16
+        Caption = 'Copyright 2026 Andy Dunkel (andy.dunkel@ekiwi.de)'
+      end
+      object LabelURL: TLabel
+        Left = 0
+        Top = 82
+        Width = 330
+        Height = 16
+        Caption = 'https://da-software.net'
+        Font.Color = clBlue
+        Font.Style = [fsUnderline]
+        ParentFont = False
+        Cursor = crHandPoint
+      end
+      object LabelFreeware: TLabel
+        Left = 0
+        Top = 114
+        Width = 330
+        Height = 16
+        Caption = 'This software is freeware.'
+      end
+    end
+  end
+  object PanelBottom: TPanel
+    Left = 0
+    Top = 160
+    Width = 420
+    Height = 40
+    Align = alBottom
+    BevelOuter = bvNone
+    TabOrder = 1
+    object ButtonClose: TButton
+      Left = 170
+      Top = 8
+      Width = 80
+      Height = 25
+      Caption = 'Close'
+      Default = True
+      TabOrder = 0
+      OnClick = ButtonCloseClick
+    end
+  end
+end
