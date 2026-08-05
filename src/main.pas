@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ExtCtrls, ComCtrls, Clipbrd,
-  SynEdit, fphttpclient, opensslsockets, fpjson, jsonparser;
+  SynEdit, SynGutterBase, fphttpclient, opensslsockets, fpjson, jsonparser;
 
 type
 
