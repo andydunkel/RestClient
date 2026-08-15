@@ -8,7 +8,7 @@ uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ComCtrls, ExtCtrls,
   Menus, ActnList, StdCtrls, Clipbrd, FileUtil, SynEditTypes,
   SynEdit, fphttpclient, opensslsockets, fpjson, jsonparser,
-  settings, aboutdlg, httphighlighter;
+  FileInfo, settings, aboutdlg, httphighlighter;
 
 type
 
@@ -117,6 +117,7 @@ type
     FRequestThread: TRequestThread;
     FProgressBar: TProgressBar;
     FHighlighter: THTTPHighlighter;
+    FAppCaption: string;
     procedure LoadTree;
     procedure FillNode(ParentNode: TTreeNode; const Dir: string);
     procedure SaveCurrentFile;
@@ -140,6 +141,42 @@ var
 implementation
 
 {$R *.lfm}
+
+function GetShortExeVersion: string;
+var
+  Info: TFileVersionInfo;
+  DotPos, DotCount, i: Integer;
+begin
+  Result := '';
+  try
+    Info := TFileVersionInfo.Create(nil);
+    try
+      Info.FileName := Application.ExeName;
+      Info.ReadFileInfo;
+      Result := Trim(Info.VersionStrings.Values['FileVersion']);
+
+      // The file version has four components; only show major.minor.build.
+      DotPos := 0;
+      DotCount := 0;
+      for i := 1 to Length(Result) do
+        if Result[i] = '.' then
+        begin
+          Inc(DotCount);
+          if DotCount = 3 then
+          begin
+            DotPos := i;
+            Break;
+          end;
+        end;
+      if DotPos > 0 then
+        SetLength(Result, DotPos - 1);
+    finally
+      Info.Free;
+    end;
+  except
+    Result := '';
+  end;
+end;
 
 { TRequestThread }
 
@@ -240,7 +277,15 @@ end;
 { TForm1 }
 
 procedure TForm1.FormCreate(Sender: TObject);
+var
+  Version: string;
 begin
+  Version := GetShortExeVersion;
+  FAppCaption := APP_NAME;
+  if Version <> '' then
+    FAppCaption := FAppCaption + ' v' + Version;
+  Caption := FAppCaption;
+
   SynEditResult.ReadOnly := True;
   SynEditSend.Keystrokes.ResetDefaults;
   SynEditResult.Keystrokes.ResetDefaults;
@@ -274,7 +319,7 @@ begin
     and DirectoryExists(FSettings.RecentFolders[0]) then
     LoadProjectDir(FSettings.RecentFolders[0]);
   if FProjectDir = '' then
-    Caption := APP_NAME;
+    Caption := FAppCaption;
 end;
 
 procedure TForm1.actExitExecute(Sender: TObject);
@@ -421,7 +466,7 @@ begin
   SynEditResult.Lines.Clear;
   FProjectDir := ADir;
   LoadTree;
-  Caption := APP_NAME + ' — ' + ADir;
+  Caption := FAppCaption + ' — ' + ADir;
   StatusBar1.SimpleText := 'Opened: ' + ADir;
 end;
 

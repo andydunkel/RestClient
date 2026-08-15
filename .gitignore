@@ -1,5 +1,6 @@
 # Lazarus compiler-generated binaries (safe to delete)
 *.exe
+!src/out/updater.exe
 *.so
 *.dylib
 *.lrs
