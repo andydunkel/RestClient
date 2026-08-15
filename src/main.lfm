@@ -483,6 +483,12 @@ object Form1: TForm1
       ImageIndex = 11
       OnExecute = actDuplicateExecute
     end
+    object actOpenInFileManager: TAction
+      Caption = 'Open in File Manager'
+      Enabled = False
+      Hint = 'Open the selected folder in the file manager'
+      OnExecute = actOpenInFileManagerExecute
+    end
     object actExit: TAction
       Caption = '&Exit'
       ImageIndex = 2
@@ -510,6 +516,9 @@ object Form1: TForm1
     end
     object PopupItemSep1: TMenuItem
       Caption = '-'
+    end
+    object PopupItemOpenInFileManager: TMenuItem
+      Action = actOpenInFileManager
     end
     object PopupItemRefresh: TMenuItem
       Action = actRefresh

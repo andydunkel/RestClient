@@ -49,6 +49,7 @@ type
     actRename: TAction;
     actDelete: TAction;
     actDuplicate: TAction;
+    actOpenInFileManager: TAction;
     ImageList1: TImageList;
     MainMenu1: TMainMenu;
     MenuFile: TMenuItem;
@@ -94,6 +95,7 @@ type
     PopupItemRename: TMenuItem;
     PopupItemDelete: TMenuItem;
     PopupItemSep1: TMenuItem;
+    PopupItemOpenInFileManager: TMenuItem;
     PopupItemRefresh: TMenuItem;
     SplitterMain: TSplitter;
     PanelRight: TPanel;
@@ -121,6 +123,7 @@ type
     procedure actRenameExecute(Sender: TObject);
     procedure actDeleteExecute(Sender: TObject);
     procedure actDuplicateExecute(Sender: TObject);
+    procedure actOpenInFileManagerExecute(Sender: TObject);
     procedure PopupMenuTreePopup(Sender: TObject);
     procedure TreeView1Change(Sender: TObject; Node: TTreeNode);
     procedure TreeView1DragOver(Sender, Source: TObject; X, Y: Integer; State: TDragState; var Accept: Boolean);
@@ -504,10 +507,10 @@ begin
   while Assigned(N) and (N.Level > 0) do
   begin
     if Result = '' then Result := N.Text
-    else Result := N.Text + '\' + Result;
+    else Result := N.Text + PathDelim + Result;
     N := N.Parent;
   end;
-  Result := FProjectDir + '\' + Result;
+  Result := IncludeTrailingPathDelimiter(FProjectDir) + Result;
 end;
 
 procedure TForm1.LoadProjectDir(const ADir: string);
@@ -863,7 +866,7 @@ begin
     Path := GetSelectedDir;
     if MessageDlg(Format('Delete folder ''%s'' and all its contents?', [Node.Text]),
         mtConfirmation, [mbYes, mbNo], 0) <> mrYes then Exit;
-    if not DeleteDirectory(Path, True) then begin ShowMessage('Could not delete folder.'); Exit; end;
+    if not DeleteDirectory(Path, False) then begin ShowMessage('Could not delete folder.'); Exit; end;
     FCurrentFile := '';
     SynEditSend.Lines.Clear;
     SynEditResult.Lines.Clear;
@@ -903,6 +906,25 @@ begin
   OpenFile(NewPath);
 end;
 
+procedure TForm1.actOpenInFileManagerExecute(Sender: TObject);
+var
+  DirectoryPath: string;
+begin
+  if FProjectDir = '' then Exit;
+  DirectoryPath := GetSelectedDir;
+
+  if not DirectoryExists(DirectoryPath) then
+  begin
+    MessageDlg('Folder not found:' + LineEnding + DirectoryPath,
+      mtError, [mbOK], 0);
+    Exit;
+  end;
+
+  if not OpenDocument(DirectoryPath) then
+    MessageDlg('Could not open the folder in the file manager.',
+      mtError, [mbOK], 0);
+end;
+
 procedure TForm1.PopupMenuTreePopup(Sender: TObject);
 var
   Node: TTreeNode;
@@ -919,10 +941,12 @@ begin
   PopupItemDuplicate.Enabled  := IsFile;
   PopupItemRename.Enabled     := IsFile or IsDir;
   PopupItemDelete.Enabled     := IsFile or IsDir;
+  PopupItemOpenInFileManager.Enabled := HasProject;
   actNewFolder.Enabled        := HasProject;
   actRename.Enabled           := IsFile or IsDir;
   actDelete.Enabled           := IsFile or IsDir;
   actDuplicate.Enabled        := IsFile;
+  actOpenInFileManager.Enabled := HasProject;
   // suppress unused warning
   if IsRoot then ;
 end;
