@@ -91,6 +91,7 @@ type
     SynEditResult: TSynEdit;
     StatusBar1: TStatusBar;
     procedure actExitExecute(Sender: TObject);
+    procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -118,6 +119,7 @@ type
     FProgressBar: TProgressBar;
     FHighlighter: THTTPHighlighter;
     FAppCaption: string;
+    FAppVersion: string;
     procedure LoadTree;
     procedure FillNode(ParentNode: TTreeNode; const Dir: string);
     procedure SaveCurrentFile;
@@ -277,13 +279,11 @@ end;
 { TForm1 }
 
 procedure TForm1.FormCreate(Sender: TObject);
-var
-  Version: string;
 begin
-  Version := GetShortExeVersion;
+  FAppVersion := GetShortExeVersion;
   FAppCaption := APP_NAME;
-  if Version <> '' then
-    FAppCaption := FAppCaption + ' v' + Version;
+  if FAppVersion <> '' then
+    FAppCaption := FAppCaption + ' v' + FAppVersion;
   Caption := FAppCaption;
 
   SynEditResult.ReadOnly := True;
@@ -320,11 +320,39 @@ begin
     LoadProjectDir(FSettings.RecentFolders[0]);
   if FProjectDir = '' then
     Caption := FAppCaption;
+
+  // Keep a ready-to-run example visible until the user opens a saved request.
+  if (FProjectDir = '') and (FCurrentFile = '')
+    and (Trim(SynEditSend.Lines.Text) = '') then
+  begin
+    SynEditSend.Lines.Text :=
+      'GET https://postman-echo.com/get?source=DA-RestClient&ssl=true' + LineEnding +
+      'Accept: application/json' + LineEnding +
+      'User-Agent: ' + APP_NAME + '/' + FAppVersion;
+    SynEditSend.CaretXY := Point(1, 1);
+    StatusBar1.SimpleText := 'Example request ready - press F5 to send';
+    actSend.Enabled := True;
+  end;
 end;
 
 procedure TForm1.actExitExecute(Sender: TObject);
 begin
-  Application.Terminate;
+  Close;
+end;
+
+procedure TForm1.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
+begin
+  CanClose := True;
+  try
+    SaveCurrentFile;
+  except
+    on E: Exception do
+    begin
+      CanClose := False;
+      MessageDlg('Could not save request:' + LineEnding + E.Message,
+        mtError, [mbOK], 0);
+    end;
+  end;
 end;
 
 procedure TForm1.FormDestroy(Sender: TObject);
@@ -776,7 +804,6 @@ end;
 
 procedure TForm1.MenuItemExitClick(Sender: TObject);
 begin
-  SaveCurrentFile;
   Close;
 end;
 
