@@ -1,0 +1,35 @@
+/* CSS Tree menu styles */
+ol.tree
+{
+	padding: 0 0 0 0px;
+	width: 100%;
+}
+
+li.tree 
+{ 
+	position: relative; 
+	margin-left: -15px;
+	list-style: none;
+}
+li.file
+{
+	margin-left: -1px !important;
+}
+	li.file a
+	{
+		background: url(pics/document.png) 0 0 no-repeat;
+		color: #000;
+		padding-left: 21px;
+		display: block;
+	}
+
+.folder
+{
+	background: url(pics/folder-horizontal.png) 15px 1px no-repeat;
+	display: block;
+	padding-left: 37px;
+	color: #000;
+}
+
+
+/* tree css end */

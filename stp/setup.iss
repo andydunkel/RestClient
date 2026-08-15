@@ -1,5 +1,5 @@
 #define AppVersion '1.0.0'
-#define AppName 'DA-WebsiteChecker'
+#define AppName 'DA-RestClient'
 #define AppCompany 'Dunkel & Iwer GbR'
 
 
@@ -7,13 +7,13 @@
 DestDir: {app}; Source: ..\src\out\*; Flags: recursesubdirs overwritereadonly ignoreversion replacesameversion
 
 [Icons]
-Name: {group}\{#AppName}; Filename: {app}\websitechecker.exe; WorkingDir: {app}; IconFilename: {app}\websitechecker.exe; IconIndex: 0; Languages: 
+Name: {group}\{#AppName}; Filename: {app}\restclient.exe; WorkingDir: {app}; IconFilename: {app}\restclient.exe; IconIndex: 0; Languages: 
 
 Name: {group}\Deinstallieren; Filename: {uninstallexe}; Languages: en
 Name: {group}\Uninstall; Filename: {uninstallexe}; Languages: de
 
 [Run]
-Filename: {app}\websitechecker.exe; WorkingDir: {app}; Flags: nowait postinstall; Description: {#AppName} starten
+Filename: {app}\restclient.exe; WorkingDir: {app}; Flags: nowait postinstall; Description: {#AppName} starten
 
 [Setup]
 AppCopyright=Dunkel & Iwer GbR
@@ -21,14 +21,14 @@ AppName={#AppName}
 AppVerName={#AppName} {#AppVersion}
 DefaultDirName={pf}\DA-Software\{#AppName}
 ShowLanguageDialog=yes
-AppID={{9B2293B5-B101-492C-8A52-63ED16AA2195}
+AppID={{F73EE3CE-621D-4BAD-A3E1-F8F99550BB24}
 VersionInfoVersion={#AppVersion}
 VersionInfoCompany=Dunkel & Iwer GbR
 VersionInfoDescription={#AppName}
 LanguageDetectionMethod=uilanguage
 DefaultGroupName=DA-Software\{#AppName}
 ShowUndisplayableLanguages=false
-OutputBaseFilename=websitechecker
+OutputBaseFilename=restclient
 VersionInfoProductName={#AppName}
 VersionInfoProductVersion={#AppVersion}
 AppPublisher=Dunkel & Iwer GbR
@@ -41,35 +41,9 @@ ChangesAssociations=true
 ;SignTool=kSign /d $qDA-FormMaker$q /du $qhttp://www.da-software$q /v $f
 ;SignedUninstaller=yes
 
-[Tasks]
-; Wizard checkbox for autostart (unchecked by default)
-Name: "autostart_reg"; \
-    Description: "{cm:AutoStartTaskDesc}"; \
-    GroupDescription: "{cm:StartupOptions}"; \
-    Flags: unchecked
-
-[CustomMessages]
-; Text for the checkbox (EN/DE)
-en.StartupOptions=Startup options:
-de.StartupOptions=Startoptionen:
-
-en.AutoStartTaskDesc=Start {#AppName} with Windows
-de.AutoStartTaskDesc={#AppName} zusammen mit Windows starten
-
-
 [Languages]
 Name: "en"; MessagesFile: "compiler:Default.isl"
 Name: "de"; MessagesFile: "compiler:Languages\German.isl"
-
-[Registry]
-; Per-user autorun entry (removed automatically on uninstall)
-Root: HKCU; \
-    Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; \
-    ValueType: string; \
-    ValueName: "{#AppName}"; \
-    ValueData: """{app}\websitechecker.exe"""; \
-    Flags: uninsdeletevalue; \
-    Tasks: autostart_reg
 
 [UninstallDelete]
 Name: {app}; Type: filesandordirs
@@ -80,7 +54,7 @@ var
   sUnInstPath: String;
   sUnInstallString: String;
 begin
-  sUnInstPath := 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{9B2293B5-B101-492C-8A52-63ED16AA2195}_is1';
+  sUnInstPath := 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{F73EE3CE-621D-4BAD-A3E1-F8F99550BB24}_is1';
   sUnInstallString := '';
   if not RegQueryStringValue(HKLM, sUnInstPath, 'UninstallString', sUnInstallString) then
     RegQueryStringValue(HKCU, sUnInstPath, 'UninstallString', sUnInstallString);

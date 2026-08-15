@@ -1,0 +1,30 @@
+<xml>
+  <draft>False</draft>
+  <title>
+  </title>
+  <author>
+  </author>
+  <description>
+  </description>
+  <keywords>
+  </keywords>
+  <robotsnoindex>False</robotsnoindex>
+  <robotsnofollow>False</robotsnofollow>
+  <isdate>False</isdate>
+  <istime>False</istime>
+  <date>01.01.0001 00:00:00</date>
+  <time>01.01.0001 00:00:00</time>
+  <istelephone>False</istelephone>
+  <recognizetelephone>False</recognizetelephone>
+  <isdateexpires>False</isdateexpires>
+  <istimeexpires>False</istimeexpires>
+  <dateexpires>01.01.0001 00:00:00</dateexpires>
+  <timeexpires>01.01.0001 00:00:00</timeexpires>
+  <secondsexpires>-1</secondsexpires>
+  <cachecontrol>0</cachecontrol>
+  <ispragmacachecontrol>False</ispragmacachecontrol>
+  <HelpId>
+  </HelpId>
+  <SelectedEditorType>Markdown</SelectedEditorType>
+  <ChmDirectory>False</ChmDirectory>
+</xml>

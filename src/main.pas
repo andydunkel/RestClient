@@ -8,7 +8,7 @@ uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ComCtrls, ExtCtrls,
   Menus, ActnList, StdCtrls, Clipbrd, FileUtil, SynEditTypes,
   SynEdit, fphttpclient, opensslsockets, fpjson, jsonparser,
-  FileInfo, settings, aboutdlg, httphighlighter;
+  Process, LCLIntf, FileInfo, settings, aboutdlg, httphighlighter;
 
 type
 
@@ -40,6 +40,8 @@ type
     actSend: TAction;
     actNewFile: TAction;
     actCopyResult: TAction;
+    actHelpContents: TAction;
+    actCheckForUpdates: TAction;
     actAbout: TAction;
     actNewFolder: TAction;
     actRename: TAction;
@@ -59,6 +61,9 @@ type
     MenuItemSend: TMenuItem;
     MenuItemCopyResult: TMenuItem;
     MenuHelp: TMenuItem;
+    MenuItemHelpContents: TMenuItem;
+    MenuItemCheckForUpdates: TMenuItem;
+    MenuItemHelpSep1: TMenuItem;
     MenuItemAbout: TMenuItem;
     ToolBar1: TToolBar;
     ToolButton1: TToolButton;
@@ -101,6 +106,8 @@ type
     procedure OnRequestDone(Sender: TObject);
     procedure actNewFileExecute(Sender: TObject);
     procedure actCopyResultExecute(Sender: TObject);
+    procedure actHelpContentsExecute(Sender: TObject);
+    procedure actCheckForUpdatesExecute(Sender: TObject);
     procedure actAboutExecute(Sender: TObject);
     procedure actNewFolderExecute(Sender: TObject);
     procedure actRenameExecute(Sender: TObject);
@@ -788,6 +795,55 @@ begin
   finally
     F.Free;
   end;
+end;
+
+procedure TForm1.actCheckForUpdatesExecute(Sender: TObject);
+var
+  UpdaterPath: string;
+  UpdaterProcess: TProcess;
+begin
+  UpdaterPath := IncludeTrailingPathDelimiter(ExtractFileDir(Application.ExeName)) +
+    'updater.exe';
+
+  if not FileExists(UpdaterPath) then
+  begin
+    MessageDlg('Update checker not found:' + LineEnding + UpdaterPath,
+      mtError, [mbOK], 0);
+    Exit;
+  end;
+
+  UpdaterProcess := TProcess.Create(nil);
+  try
+    UpdaterProcess.Executable := UpdaterPath;
+    UpdaterProcess.CurrentDirectory := ExtractFileDir(UpdaterPath);
+    try
+      UpdaterProcess.Execute;
+    except
+      on E: Exception do
+        MessageDlg('Could not start the update checker:' + LineEnding + E.Message,
+          mtError, [mbOK], 0);
+    end;
+  finally
+    UpdaterProcess.Free;
+  end;
+end;
+
+procedure TForm1.actHelpContentsExecute(Sender: TObject);
+var
+  HelpPath: string;
+begin
+  HelpPath := IncludeTrailingPathDelimiter(ExtractFileDir(Application.ExeName)) +
+    'help' + PathDelim + 'index.html';
+
+  if not FileExists(HelpPath) then
+  begin
+    MessageDlg('Help file not found:' + LineEnding + HelpPath,
+      mtError, [mbOK], 0);
+    Exit;
+  end;
+
+  if not OpenDocument(HelpPath) then
+    MessageDlg('Could not open the help file.', mtError, [mbOK], 0);
 end;
 
 procedure TForm1.actCopyResultExecute(Sender: TObject);

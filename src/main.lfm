@@ -364,6 +364,15 @@ object Form1: TForm1
     end
     object MenuHelp: TMenuItem
       Caption = 'Help'
+      object MenuItemHelpContents: TMenuItem
+        Action = actHelpContents
+      end
+      object MenuItemCheckForUpdates: TMenuItem
+        Action = actCheckForUpdates
+      end
+      object MenuItemHelpSep1: TMenuItem
+        Caption = '-'
+      end
       object MenuItemAbout: TMenuItem
         Action = actAbout
       end
@@ -408,6 +417,17 @@ object Form1: TForm1
       Hint = 'Copy result to clipboard'
       ImageIndex = 9
       OnExecute = actCopyResultExecute
+    end
+    object actHelpContents: TAction
+      Caption = 'Help Contents'
+      Hint = 'Open the DA-RestClient help'
+      ShortCut = 112
+      OnExecute = actHelpContentsExecute
+    end
+    object actCheckForUpdates: TAction
+      Caption = 'Check for updates...'
+      Hint = 'Check for application updates'
+      OnExecute = actCheckForUpdatesExecute
     end
     object actAbout: TAction
       Caption = 'About...'
