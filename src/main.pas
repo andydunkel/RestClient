@@ -40,6 +40,8 @@ type
     actSend: TAction;
     actNewFile: TAction;
     actCopyResult: TAction;
+    actOpenDemoProject: TAction;
+    actResetDemoProject: TAction;
     actHelpContents: TAction;
     actCheckForUpdates: TAction;
     actAbout: TAction;
@@ -51,6 +53,8 @@ type
     MainMenu1: TMainMenu;
     MenuFile: TMenuItem;
     MenuItemOpenFolder: TMenuItem;
+    MenuItemOpenDemoProject: TMenuItem;
+    MenuItemResetDemoProject: TMenuItem;
     MenuItemNewFile: TMenuItem;
     MenuItemRecent: TMenuItem;
     MenuItemSep1: TMenuItem;
@@ -65,6 +69,8 @@ type
     MenuItemCheckForUpdates: TMenuItem;
     MenuItemHelpSep1: TMenuItem;
     MenuItemAbout: TMenuItem;
+    Separator1: TMenuItem;
+    Separator2: TMenuItem;
     ToolBar1: TToolBar;
     ToolButton1: TToolButton;
     ToolButton2: TToolButton;
@@ -101,6 +107,8 @@ type
     procedure FormShow(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure actOpenFolderExecute(Sender: TObject);
+    procedure actOpenDemoProjectExecute(Sender: TObject);
+    procedure actResetDemoProjectExecute(Sender: TObject);
     procedure actRefreshExecute(Sender: TObject);
     procedure actSendExecute(Sender: TObject);
     procedure OnRequestDone(Sender: TObject);
@@ -132,6 +140,10 @@ type
     procedure SaveCurrentFile;
     procedure OpenFile(const APath: string);
     procedure LoadProjectDir(const ADir: string);
+    function  GetDemoTemplateDir: string;
+    function  GetDemoProjectDir: string;
+    function  EnsureDemoProject(AReset: Boolean): Boolean;
+    procedure OpenDemoProject(AReset: Boolean);
     procedure RebuildRecentMenu;
     procedure RecentFolderClick(Sender: TObject);
     function  GetSelectedDir: string;
@@ -325,6 +337,11 @@ begin
   if (FSettings.RecentFolders.Count > 0)
     and DirectoryExists(FSettings.RecentFolders[0]) then
     LoadProjectDir(FSettings.RecentFolders[0]);
+
+  // On first start, open a writable copy of the bundled demo project.
+  if FProjectDir = '' then
+    OpenDemoProject(False);
+
   if FProjectDir = '' then
     Caption := FAppCaption;
 
@@ -505,6 +522,119 @@ begin
   StatusBar1.SimpleText := 'Opened: ' + ADir;
 end;
 
+function TForm1.GetDemoTemplateDir: string;
+var
+  ExeDir, DevelopmentDir: string;
+begin
+  ExeDir := ExtractFileDir(Application.ExeName);
+  Result := ExeDir + PathDelim + 'demo';
+
+  // When running from src\out, use the repository demo as the template.
+  if not DirectoryExists(Result) then
+  begin
+    DevelopmentDir := ExpandFileName(ExeDir + PathDelim + '..' + PathDelim +
+      '..' + PathDelim + 'demo');
+    if DirectoryExists(DevelopmentDir) then
+      Result := DevelopmentDir;
+  end;
+end;
+
+function TForm1.GetDemoProjectDir: string;
+var
+  BaseDir: string;
+begin
+  BaseDir := GetEnvironmentVariable('APPDATA');
+  if BaseDir <> '' then
+    BaseDir := IncludeTrailingPathDelimiter(BaseDir) + APP_NAME
+  else
+    BaseDir := ExcludeTrailingPathDelimiter(GetAppConfigDir(False));
+
+  Result := IncludeTrailingPathDelimiter(BaseDir) + 'Demo Project';
+end;
+
+function TForm1.EnsureDemoProject(AReset: Boolean): Boolean;
+var
+  TemplateDir, ProjectDir, StagingDir: string;
+begin
+  Result := False;
+  TemplateDir := GetDemoTemplateDir;
+  ProjectDir := GetDemoProjectDir;
+
+  if not DirectoryExists(TemplateDir) then
+  begin
+    MessageDlg('Demo project template not found:' + LineEnding + TemplateDir,
+      mtError, [mbOK], 0);
+    Exit;
+  end;
+
+  if AReset and DirectoryExists(ProjectDir) then
+  begin
+    StagingDir := ProjectDir + '.reset';
+    if DirectoryExists(StagingDir) and
+      (not DeleteDirectory(StagingDir, False)) then
+    begin
+      MessageDlg('Could not prepare the demo project reset.',
+        mtError, [mbOK], 0);
+      Exit;
+    end;
+
+    if not CopyDirTree(TemplateDir, StagingDir, [cffOverwriteFile]) then
+    begin
+      DeleteDirectory(StagingDir, False);
+      MessageDlg('Could not copy the demo project template.',
+        mtError, [mbOK], 0);
+      Exit;
+    end;
+
+    if not DeleteDirectory(ProjectDir, False) then
+    begin
+      DeleteDirectory(StagingDir, False);
+      MessageDlg('Could not replace the existing demo project.',
+        mtError, [mbOK], 0);
+      Exit;
+    end;
+
+    if not RenameFile(StagingDir, ProjectDir) then
+    begin
+      MessageDlg('Could not activate the reset demo project.',
+        mtError, [mbOK], 0);
+      Exit;
+    end;
+  end
+  else if not DirectoryExists(ProjectDir) then
+  begin
+    if not CopyDirTree(TemplateDir, ProjectDir, [cffOverwriteFile]) then
+    begin
+      MessageDlg('Could not create the writable demo project.',
+        mtError, [mbOK], 0);
+      Exit;
+    end;
+  end;
+
+  Result := True;
+end;
+
+procedure TForm1.OpenDemoProject(AReset: Boolean);
+var
+  ProjectDir: string;
+  IsCurrentDemo: Boolean;
+begin
+  ProjectDir := GetDemoProjectDir;
+  IsCurrentDemo := (FProjectDir <> '') and
+    (CompareText(ExcludeTrailingPathDelimiter(ExpandFileName(FProjectDir)),
+      ExcludeTrailingPathDelimiter(ExpandFileName(ProjectDir))) = 0);
+
+  if not EnsureDemoProject(AReset) then Exit;
+
+  // Do not save the old editor contents back into a freshly reset project.
+  if AReset and IsCurrentDemo then
+    FCurrentFile := '';
+
+  LoadProjectDir(ProjectDir);
+  FSettings.AddRecentFolder(ProjectDir);
+  RebuildRecentMenu;
+end;
+
 procedure TForm1.RebuildRecentMenu;
 var
   i: Integer;
@@ -556,6 +686,18 @@ begin
     FSettings.AddRecentFolder(Dir);
     RebuildRecentMenu;
   end;
+end;
+
+procedure TForm1.actOpenDemoProjectExecute(Sender: TObject);
+begin
+  OpenDemoProject(False);
+end;
+
+procedure TForm1.actResetDemoProjectExecute(Sender: TObject);
+begin
+  if MessageDlg('Reset the demo project and discard all changes?',
+    mtConfirmation, [mbYes, mbNo], 0) = mrYes then
+    OpenDemoProject(True);
 end;
 
 procedure TForm1.actRefreshExecute(Sender: TObject);

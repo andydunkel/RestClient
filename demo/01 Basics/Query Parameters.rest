@@ -1,0 +1,2 @@
+GET https://postman-echo.com/get?project=DA-RestClient&example=query
+Accept: application/json

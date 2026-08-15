@@ -1,0 +1,7 @@
+POST https://postman-echo.com/post
+Content-Type: application/json
+Accept: application/json
+
+{
+  "message": "Hello from DA-RestClient"
+}

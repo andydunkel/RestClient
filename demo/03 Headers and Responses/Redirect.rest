@@ -1,0 +1,2 @@
+GET https://httpbin.org/redirect/1
+Accept: application/json

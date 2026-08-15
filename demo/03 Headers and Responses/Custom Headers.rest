@@ -1,0 +1,3 @@
+GET https://postman-echo.com/headers
+Accept: application/json
+X-Demo-Header: DA-RestClient

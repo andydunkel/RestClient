@@ -5,6 +5,7 @@
 
 [Files]
 DestDir: {app}; Source: ..\src\out\*; Flags: recursesubdirs overwritereadonly ignoreversion replacesameversion
+Source: ..\demo\*; DestDir: {app}\demo; Flags: recursesubdirs createallsubdirs overwritereadonly ignoreversion replacesameversion
 
 [Icons]
 Name: {group}\{#AppName}; Filename: {app}\restclient.exe; WorkingDir: {app}; IconFilename: {app}\restclient.exe; IconIndex: 0; Languages: 

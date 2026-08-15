@@ -320,7 +320,6 @@ object Form1: TForm1
     Top = 727
     Width = 1200
     Panels = <>
-    SimplePanel = True
     SimpleText = 'Ready'
   end
   object MainMenu1: TMainMenu
@@ -331,6 +330,18 @@ object Form1: TForm1
       Caption = 'File'
       object MenuItemOpenFolder: TMenuItem
         Action = actOpenFolder
+      end
+      object Separator1: TMenuItem
+        Caption = '-'
+      end
+      object MenuItemOpenDemoProject: TMenuItem
+        Action = actOpenDemoProject
+      end
+      object MenuItemResetDemoProject: TMenuItem
+        Action = actResetDemoProject
+      end
+      object Separator2: TMenuItem
+        Caption = '-'
       end
       object MenuItemNewFile: TMenuItem
         Action = actNewFile
@@ -388,6 +399,16 @@ object Form1: TForm1
       ImageIndex = 6
       ShortCut = 16463
       OnExecute = actOpenFolderExecute
+    end
+    object actOpenDemoProject: TAction
+      Caption = 'Open Demo Project'
+      Hint = 'Open the writable demo project'
+      OnExecute = actOpenDemoProjectExecute
+    end
+    object actResetDemoProject: TAction
+      Caption = 'Reset Demo Project...'
+      Hint = 'Restore the demo project to its original state'
+      OnExecute = actResetDemoProjectExecute
     end
     object actRefresh: TAction
       Caption = 'Refresh'

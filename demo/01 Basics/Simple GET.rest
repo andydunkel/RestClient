@@ -1,0 +1,2 @@
+GET https://postman-echo.com/get
+Accept: application/json

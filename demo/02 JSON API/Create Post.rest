@@ -1,0 +1,9 @@
+POST https://jsonplaceholder.typicode.com/posts
+Content-Type: application/json
+Accept: application/json
+
+{
+  "title": "Demo post",
+  "body": "Created with DA-RestClient",
+  "userId": 1
+}

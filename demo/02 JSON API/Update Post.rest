@@ -1,0 +1,10 @@
+PUT https://jsonplaceholder.typicode.com/posts/1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "id": 1,
+  "title": "Updated demo post",
+  "body": "Updated with DA-RestClient",
+  "userId": 1
+}
