@@ -1,0 +1,33 @@
+<h2>DA-RestClient: REST-Endpunkte einfach und schnell testen</h2>
+
+Für einen kurzen API-Test muss es nicht immer eine umfangreiche Entwicklungsumgebung sein. DA-RestClient ist eine kleine Desktop-Anwendung, mit der sich REST-Endpunkte unkompliziert aufrufen und überprüfen lassen.
+
+Eine Anfrage wird direkt als Text eingegeben. Die erste Zeile enthält die HTTP-Methode und die URL, danach folgen bei Bedarf Header und Request-Body. Mit <code>F5</code> wird die Anfrage gesendet. HTTP-Status, Response-Header und Antwortinhalt erscheinen übersichtlich im unteren Editor. Gültige JSON-Antworten werden automatisch formatiert.
+
+<img src="/restclient/da-restclient-screenshot_1.png" alt="DA-RestClient mit einer REST-Anfrage und der formatierten Antwort" loading="lazy">
+
+<h3>Einfache Textdateien statt proprietärer Projekte</h3>
+
+DA-RestClient speichert jede Anfrage als normale <code>.rest</code>-Textdatei. Ein Projekt ist lediglich ein Ordner mit Dateien und Unterordnern. Dadurch bleiben alle Anfragen transparent und können auch außerhalb der Anwendung gelesen oder bearbeitet werden.
+
+Die Dateien lassen sich wie Quellcode verwalten: Sie können kopiert, gesichert, durchsucht und mit Git versioniert werden. Änderungen bleiben nachvollziehbar und komplette Request-Sammlungen können einfach gemeinsam mit einem Projekt abgelegt werden.
+
+<img src="/restclient/da-restclient-screenshot_2.png" alt="Projektordner von DA-RestClient in der Anwendung und im Windows Explorer" loading="lazy">
+
+<h3>Eine Anfrage in wenigen Zeilen</h3>
+
+<pre><code>POST https://example.com/api/items
+Content-Type: application/json
+Authorization: Bearer TOKEN
+
+{
+  "name": "Example"
+}</code></pre>
+
+Unterstützt werden unter anderem GET-, POST-, PUT-, PATCH- und DELETE-Anfragen sowie individuelle Header, Query-Parameter und Request-Bodys.
+
+<h3>Auf das Wesentliche konzentriert</h3>
+
+DA-RestClient kommt ohne große Frameworks, Benutzerkonto oder Cloud-Speicher aus. Die native Anwendung ist klein, startet schnell und konzentriert sich auf die Funktionen, die beim Testen von REST-Endpunkten tatsächlich benötigt werden.
+
+Damit eignet sich DA-RestClient für Entwickler, Tester und Administratoren ebenso wie für alle, die gelegentlich eine API prüfen möchten. Die Anwendung ist kostenlos nutzbar.

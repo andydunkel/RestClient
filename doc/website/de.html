@@ -1,0 +1,39 @@
+<h2>DA-RestClient – REST-APIs einfach testen</h2>
+
+DA-RestClient ist eine leichtgewichtige Desktop-Anwendung zum Testen von REST-API-Endpunkten. HTTP-Anfragen lassen sich schnell erstellen und senden. Statuscodes, Header und Antwortinhalte werden übersichtlich angezeigt, JSON-Antworten automatisch formatiert.
+
+Anfragen werden als einfache <code>.rest</code>-Textdateien in normalen Ordnern gespeichert. Es gibt keine proprietären Projektformate oder Datenbanken. Die Dateien bleiben leicht lesbar, können frei bearbeitet und kopiert sowie mit Versionsverwaltungssystemen wie Git verwaltet werden.
+
+<a href="/restclient/restclient.exe"
+style="display: flex; align-items: center; justify-content: center; padding: 12px 24px; background: #0078D4; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; min-width: 200px; text-align: center; white-space: nowrap; height: 50px; box-sizing: border-box; line-height: 1; font-size: 16px; margin: 0;"
+onmouseover="this.style.background='#005A9E'"
+onmouseout="this.style.background='#0078D4'">
+    💾 Windows
+</a>
+
+<img src="/restclient/da-restclient-screenshot_1.png" alt="DA-RestClient mit einer REST-Anfrage und der formatierten Antwort" loading="lazy">
+
+<h3>Die wichtigsten Funktionen</h3>
+
+<ul>
+<li>Unterstützung für GET-, POST-, PUT-, PATCH- und DELETE-Anfragen</li>
+<li>Header, Query-Parameter und Request-Body</li>
+<li>Automatisch formatierte JSON-Antworten</li>
+<li>Übersichtliche Anzeige von HTTP-Status, Headern und Antwortinhalt</li>
+<li>Einfache, ordnerbasierte Projektverwaltung</li>
+<li>Automatisches Speichern der Anfragen</li>
+<li>Git-freundliche <code>.rest</code>-Textdateien</li>
+<li>Kleine native Anwendung ohne große Frameworks</li>
+<li>Kostenlos nutzbar</li>
+</ul>
+
+Eine Anfrage kann so einfach sein:
+
+<pre><code>GET https://example.com/api/items
+Accept: application/json</code></pre>
+
+Projektordner öffnen, eine <code>.rest</code>-Datei auswählen oder erstellen und die Anfrage mit <code>F5</code> senden. Die Antwort wird direkt unterhalb des Request-Editors angezeigt.
+
+<img src="/restclient/da-restclient-screenshot_2.png" alt="Projektordner von DA-RestClient in der Anwendung und im Windows Explorer" loading="lazy">
+
+DA-RestClient richtet sich an Entwickler, Tester und Administratoren, die REST-Endpunkte schnell und unkompliziert prüfen möchten – ohne Benutzerkonto, Cloud-Speicher oder unnötige Komplexität.
