@@ -39,8 +39,8 @@ AppUpdatesURL=https://www.da-software.net
 ;WizardImageFile=Icon_inst.bmp
 ;WizardSmallImageFile=Icon_inst_small.bmp
 ChangesAssociations=true
-;SignTool=kSign /d $qDA-FormMaker$q /du $qhttp://www.da-software$q /v $f
-;SignedUninstaller=yes
+SignTool=yubikey /d $qDA-FormMaker$q /du $qhttp://www.da-software$q /v $f
+SignedUninstaller=yes
 
 [Languages]
 Name: "en"; MessagesFile: "compiler:Default.isl"
